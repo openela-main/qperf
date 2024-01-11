@@ -1,0 +1,43 @@
+From 3d4ed395c32ae4c9a3b9a6ec83feb448eaa17b20 Mon Sep 17 00:00:00 2001
+From: SangameshwarBabu <sangambabu1@gmail.com>
+Date: Wed, 15 Jun 2022 00:10:36 +0530
+Subject: [PATCH] Update qperf.c
+
+Current version of qperf throws errors in environment with only ipv4 address
+
+        With ipv6.disable in kernel command line :
+
+        # qperf
+        unable to bind to listen port
+
+        strace :
+    9052  14:24:36.118470 socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP) = -1 EAFNOSUPPORT (Address family not supported by protocol) <0.001313>
+    9052  14:24:36.119820 fstat(1</dev/pts/0<char 136:0>>, {st_dev=makedev(0, 23), st_ino=3, st_mode=S_IFCHR|0620, st_nlink=1, st_uid=0, st_gid=5, st_blksize=1024, st_blocks=0, st_rdev=makedev(136, 0), st_atime=1651602272 /* 2022-05-03T14:24:32.680622196-0400 */, st_atime_nsec=680622196, st_mtime=1651602272 /* 2022-05-03T14:24:32.680622196-0400 */, st_mtime_nsec=680622196, st_ctime=1651602034 /* 2022-05-03T14:20:34.680622196-0400 */, st_ctime_nsec=680622196}) = 0 <0.000005>
+    9052  14:24:36.119866 write(1</dev/pts/0<char 136:0>>, "unable to bind to listen port\n", 30) = 30 <0.000039>
+    9052  14:24:36.119950 exit_group(1)     = ?
+    9052  14:24:36.120060 +++ exited with 1 ++
+
+        With qperf version 0.4.9 we defined AI_FAMILY as AF_UNSPEC, starting
+        qperf 0.4.11 the same is changed to AF_INET6 which causes issues
+        when ipv6 is disabled at protocol layer (as a kernel command line
+        arguement). This patch reverses the behavior.
+---
+ src/qperf.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/qperf.c b/src/qperf.c
+index 89fe5b8f2eeb..4de0cceeb10f 100644
+--- a/src/qperf.c
++++ b/src/qperf.c
+@@ -1418,7 +1418,7 @@ server_listen(void)
+     AI *ai;
+     AI hints ={
+         .ai_flags    = AI_PASSIVE | AI_NUMERICSERV,
+-	.ai_family   = AF_INET6,
++	.ai_family   = AF_UNSPEC,
+         .ai_socktype = SOCK_STREAM
+     };
+     AI *ailist = getaddrinfo_port(0, ListenPort, &hints);
+-- 
+2.39.2
+

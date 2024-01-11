@@ -1,7 +1,7 @@
 Name:           qperf
 Summary:        Measure socket and RDMA performance
 Version:        0.4.11
-Release:        2%{?dist}
+Release:        3%{?dist}
 License:        GPLv2 or BSD
 Group:          Networking/Diagnostic
 Source:         https://github.com/linux-rdma/%{name}/archive/v%{version}.tar.gz
@@ -13,11 +13,14 @@ BuildRequires:  autoconf automake
 # RDMA is not currently built on 32-bit ARM: #1484155
 ExcludeArch:    %{arm}
 
+# rhbz#2099772, https://github.com/linux-rdma/qperf/pull/25/
+Patch0000:      0001-Update-qperf.c.patch
+
 %description
 Measure socket and RDMA performance.
 
 %prep
-%setup -q
+%autosetup -p1
 
 %build
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
@@ -34,6 +37,10 @@ make DESTDIR=%{buildroot} install
 %_mandir/man1/qperf.1*
 
 %changelog
+* Thu Apr 20 2023 Michal Schmidt <mschmidt@redhat.com> - 0.4.11-3
+- Restore functionality in IPv4-only environments.
+- Resolves: RHELPLAN-125872
+
 * Wed Apr 07 2021 Honggang Li <honli@redhat.com> - 0.4.11-2
 - Add qperf for s390x
 - Resolves: bz1933283
